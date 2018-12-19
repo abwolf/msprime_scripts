@@ -89,7 +89,8 @@ def introgressed_samples_fn(ts, neanderthal_mrca, neanderthal_samples, segments)
             ## In python set() is an unordered collection of unique values;
             # x = [1, 1, 2, 2, 3, 3] --> set(x) --> set([1, 2, 3])
             ## tree.leaves(n) returns an iterator over all the leaves in this tree underneath the specified node (in this case the neanderthal_mrca)
-##          print("\t\tTREE:", tree.get_interval(), human_leaves)
+            #print("\t\tTREE:", tree.get_interval(), human_leaves)
+            #print("\t\tTREE:", tree.get_interval(), set(tree.leaves(neanderthal_mrca)))
             if start is None:
                 last_human_leaves = human_leaves
                 start = tree.get_interval()[0]
@@ -100,6 +101,54 @@ def introgressed_samples_fn(ts, neanderthal_mrca, neanderthal_samples, segments)
                 last_human_leaves = human_leaves
             tree = next(trees, None)
         yield start, right, last_human_leaves
+
+
+def ILS_samples_fn(ts, neanderthal_mrca, neanderthal_samples, segments):
+    # Define the samples that carry introgressed segments?
+    trees = ts.trees()
+    tree = next(trees)
+    for left, right in segments:
+##        print("\tINTERVAL:", left, right)
+        # Skip ahead to the tree that intersects with this segment.
+        # NOTE: Regading tree data; The "Records" group consists of four pieces of information:
+        # 1) the left and 2) right coordinates of the coalescing interval, 3) the list of child nodes (modern human samples) and 4) the parent node.
+        # Each record returned can be accessed via the attributes 'left', 'right', 'node', 'children', 'time' and 'population'
+        # A record represents the assignment of a pair of children 'c' to a parent 'u'. This assignment happens at 't' generations in the past within the population with ID 'd'
+        while tree.get_interval()[0] < left:
+            ## Pass through the potential trees until you get to the one where the start_position matches the start of the defined segment
+            tree = next(trees)
+            #print(tree.get_interval()[0], left)
+        if set(neanderthal_samples).issubset(set(tree.leaves(neanderthal_mrca))):
+            ## Check that we are looking at a coalescent tree that has leaves in both the Neand population and the human population
+            # It is likely many trees will have leaves just in the MH lineage, we dont want to pick these
+            assert tree.get_interval()[0] == left
+            start = None
+            last_human_leaves = None
+    ##        print(start, last_human_leaves)
+            while tree is not None and tree.get_interval()[1] <= right:
+                #print( set(tree.leaves(neanderthal_mrca)) )
+                #print( neanderthal_samples )
+                human_leaves = set(tree.leaves(neanderthal_mrca)) - set(neanderthal_samples)
+                #print( human_leaves )
+                ## Create a set() of all the human leaves represented in this tree that share an mrca in the Neandertal lineage
+                # (i.e. mrca node is in Neand population)
+                ## neanderthal_mrca is supplied from the node_map dictionary as the parent node for the tree present in the Neandertal population
+                ## In python set() is an unordered collection of unique values;
+                # x = [1, 1, 2, 2, 3, 3] --> set(x) --> set([1, 2, 3])
+                ## tree.leaves(n) returns an iterator over all the leaves in this tree underneath the specified node (in this case the neanderthal_mrca)
+                #print("\t\tTREE:", tree.get_interval(), human_leaves)
+                #print("\t\tTREE:", tree.get_interval(), set(tree.leaves(neanderthal_mrca)))
+                if start is None:
+                    last_human_leaves = human_leaves
+                    start = tree.get_interval()[0]
+                elif human_leaves != last_human_leaves:
+                    end = tree.get_interval()[0]
+                    yield start, end, last_human_leaves
+                    start = end
+                    last_human_leaves = human_leaves
+                tree = next(trees, None)
+            yield start, right, last_human_leaves
+
 
 
 ####### SIMULATION RUNS ############
@@ -265,7 +314,7 @@ if (options.haplo == "haplo"):
                     if set(record.children) != N_samples:
                         ## If the child/leaf nodes for the record are not Neandertal samples
                         # add the node ID and the position of the segments to node_map
-                        # print("record:", record)
+#                        print("record:", record)
                         node_map[record.node].append((record.left, record.right))
             for neanderthal_mrca, segments in node_map.items():
                 ## >>> node_map.items()
@@ -308,6 +357,74 @@ if (options.haplo == "haplo"):
 
         pybedtools.cleanup(verbose=False)
         haplo_outfile.close()
+
+
+
+elif (options.haplo == "ILS"):
+        # Create a .bed file to write to for the simulation
+        ILS_outfile = sys.stdout
+        #haplo_outfile = gzip.open( options.outdir+'_'+options.pop+'_'+str(options.seed)+'_n1_'+str(options.n1_admix_prop)+'_n2_'+str(options.n2_admix_prop)+'.bed.merged.gz' , 'wb' )
+        haplo_entry_list=[]
+##  FOR EACH SIMULATED CHROMOSOME, PRINT ALL THE INTROGRESSED HAPLOTYPES BELONGING TO THE SPECIFIED NON-AFR POPULATION IN BED FORMAT  ###
+        for t, tree_sequence in enumerate(simulation):
+            ## t is the tree ID, ts is a given tree from the simulation
+            node_map = collections.defaultdict(list)
+            ## 'collections' = pythons high-performance container types, 'defaultdict()' is one such container type
+            # defaultdict() = dict subclass that calls a factory function to supply missing values
+            # Using 'list' as the default_factory, it is easy to group a sequence of key-value pairs into a dictionary of lists:
+            ## Defines "node_map" as an empty dictionary of lists ; [('n1', [0, 10]), ('n2', [11, 14]), ('n3', [15, 20])]
+            for record in tree_sequence.records():
+                ## for a single record from all the records of a given tree ts
+                # We are interested in coalescence events that occured in the Neandertal population
+#                if record.population <= 1:
+                if record.population == 2:
+                    ## Modified to look for ILS segments, where colescent event occurs in the ancestral Neand-EUR_ASN population
+                    if record.time >= 28000 and record.time < 50000:
+                        ## To ensure we pick up on only some ILS segements
+                        # limit the time range for coalescent events...
+                        # If you allow coalescent events to occur at any point from T_N_MH to T_MH_CH, the whole genome will called as ILS
+                        node_map[record.node].append((record.left, record.right))
+            for neanderthal_mrca, segments in node_map.items():
+                ## >>> node_map.items()
+                # [('n1', [0, 10]), ('n2', [11, 14]), ('n3', [15, 20])]
+                # where the node is the neanderthal_mrca (e.g. 'n1'), and the segments is the tree interval (e.g. [0,10])
+#                print(neanderthal_mrca, "->", segments)
+                iterator = ILS_samples_fn(tree_sequence, neanderthal_mrca, N_samples, segments)
+                ## Run the introgressed_samples function,
+                # using the given tree, the defined Neandertal_mrca/node, the defined tree interval/'segments', and the defined Neand_samples
+                for left, right, samples in iterator:
+#                        print("\t", left, right, samples, file=sys.stderr)
+                        for s in samples:
+                                if s in human_samples:
+                                        if int(math.ceil(left)) < int(math.ceil(right)):
+#                                                print(s, int(math.ceil(left)), int(math.ceil(right)), s)
+                                                haplo_entry=str(s)+'\t'+str(int(math.ceil(left)))+'\t'+str(int(math.ceil(right)))+'\t'+str(s)
+                                                haplo_entry_list.append(haplo_entry+'\n')
+                                                # Only print nonAfr samples
+                                                ## NOTE: After printing to a bed file, still need to sort and merge the bedfile.
+        ## Join together the list of introgressed haplotypes into a string, and convert this to a BED file using pybedtools
+        ## Then perform the sort() and merge() functions in python on the BEDfile object
+        haplo_entry_string = ''.join(haplo_entry_list)
+        pybedtools.set_tempdir('/scratch/tmp/abwolf/msprime/')
+        #print(pybedtools.get_tempdir(), file=sys.stderr)
+        BEDFILE = pybedtools.BedTool(haplo_entry_string, from_string=True)
+        BEDFILE_SORTED_MERGED = pybedtools.BedTool.sort(BEDFILE).merge()
+
+#        print(BEDFILE_SORTED_MERGED.head(),file=sys.stdout)
+#        print(BEDFILE_SORTED_MERGED)
+
+        ## Read the BEDfile line by line, add in the chr#, reorder so that the columns are: chr, strt, end, ind
+        ## write to haplo_outfile in gzip
+        for bed_line in BEDFILE_SORTED_MERGED:
+                new_bed_line = str(bed_line).strip() + '\t' + str(options.seed)
+                new_bed_line = new_bed_line.split('\t')
+                new_bed_line[0], new_bed_line[3] = new_bed_line[3], new_bed_line[0]
+#                print(new_bed_line, file=sys.stdout)
+#                print('\t'.join(new_bed_line))
+                ILS_outfile.write('\t'.join(new_bed_line)+'\n')
+
+        pybedtools.cleanup(verbose=False)
+        ILS_outfile.close()
 
 
 

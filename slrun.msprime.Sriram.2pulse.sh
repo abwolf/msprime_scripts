@@ -12,21 +12,23 @@ echo $SLURM_ARRAY_TASK_ID
 echo ''
 
 mdl=$( echo Sriram )
-seed=$( cat ../Sriram.chr_list | awk 'BEGIN {OFS="\t"} NR=='$SLURM_ARRAY_TASK_ID' {print $0}' )
+seed=$( cat ../Sriram.chr_list | awk 'BEGIN {OFS="\t"} NR==(2000 + '$SLURM_ARRAY_TASK_ID' ) {print $0}' )
+#seed=$seed
 
-n1=$( echo 0.1)
+n1=$( echo 0.0)
 n2=$( echo 0.0)
 
 m_AF_B=$( echo 0.0 )
 m_B_AF=$( echo 0.0 )
 m_AF_EU=$( echo 0.0 )
-m_EU_AF=$( echo 0.0005 )
+m_EU_AF=$( echo 0.0 )
 
 eur=$( echo 1006 )   #1006
 asn=$( echo 1008 )   #1008 ; 2040
 len=$( awk 'BEGIN {print 1e6}' )
+pop=$( echo modHum )
 
-tag=$(echo "$mdl"_nonAfr_"$seed"_n1_"$n1"_mAfB_"$m_AF_B"_mBAf_"$m_B_AF"_mAfEu_"$m_AF_EU"_mEuAf_"$m_EU_AF")
+tag=$(echo "$mdl"_"$pop"_"$seed"_n1_"$n1"_mAfB_"$m_AF_B"_mBAf_"$m_B_AF"_mAfEu_"$m_AF_EU"_mEuAf_"$m_EU_AF")
 dir=~/SimulatedDemographic/msprime/
 sstardir=~/SimulatedDemographic/Sstar/
 
@@ -34,7 +36,7 @@ sstardir=~/SimulatedDemographic/Sstar/
 echo mdl: $mdl	seed: $seed n1: $n1 n2: $n2 eur: $eur asn: $asn		tag: $tag
 echo **RUN MSPRIME SIMULATION AND OUTPUT VCF**
 cmd=$( echo " python $dir/bin/msprime.Admixture_Simulate.py \n
-			-p nonAfr \n
+			-p $pop \n
 			-o $mdl \n
 			-s $seed \n
 			-i 2 \n
@@ -51,7 +53,7 @@ cmd=$( echo " python $dir/bin/msprime.Admixture_Simulate.py \n
 			--migration_EU_AF $m_EU_AF \n
 			--migration_EU_AS 0 \n
 			--migration_AS_EU 0 \n
-			-c haplo \n
+			-c ILS \n
 			-l $len  \n
 			| gzip -c - > $tag.bed.gz")
 echo -e $cmd

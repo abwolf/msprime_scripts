@@ -383,7 +383,7 @@ def Tenn_demography(S_N1, S_N2, S_AF, S_EU, S_AS,
                             )
 
 
-    elif (haplo == "haplo" or haplo == "vcf"):
+    else:
 ####### HAPLOTYPE SIMULATION FOR DESERT DISTRIBUTION ############
             return msprime.simulate(
                             Ne = N_A,
@@ -617,7 +617,7 @@ def Sriram_demography(S_N1, S_N2, S_AF, S_EU, S_AS,
                             random_seed = seed
                             )
 
-    elif (haplo == "haplo" or haplo == "vcf"):
+    else:
 ####### HAPLOTYPE SIMULATION FOR DESERT DISTRIBUTION ############
             return msprime.simulate(
                             Ne = N_A,
@@ -885,7 +885,7 @@ def SplitPop_demography(S_N1, S_N2, S_AF, S_EU, S_AS,
                             random_seed = seed
                             )
 
-    elif (haplo == "haplo" or haplo == "vcf"):
+    else:
 ####### HAPLOTYPE SIMULATION FOR DESERT DISTRIBUTION ############
             return msprime.simulate(
                             Ne = N_A,
