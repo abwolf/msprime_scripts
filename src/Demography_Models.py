@@ -1507,11 +1507,11 @@ class Pre_out_of_africa_admixture(Sriram_demography):
 
         self.events += [
             # Neand1 to EAS pulse of introgression
-            msprime.MassMigration(
-                time=self.T_PULSE2,
-                source=ids['AS'],
-                destination=ids['N1'],
-                proportion=self.m_PULSE2),
+            # msprime.MassMigration(
+            #     time=self.T_PULSE2,
+            #     source=ids['AS'],
+            #     destination=ids['N1'],
+            #     proportion=self.m_PULSE2),
 
             # AS merges into EU, now termed "B"
             msprime.MassMigration(
@@ -1606,11 +1606,12 @@ class Pre_out_of_africa_admixture(Sriram_demography):
                 growth_rate=0,
                 population_id=ids['N1']),
 
+            # Human --> Neand admixture
             msprime.MassMigration(
                 time=self.T_PULSE_preOOA,
                 source=ids['N1'],
                 destination=ids['AF'],
-                proportion=0.1),
+                proportion=self.m_PULSE2),
 
             # DE merges with N1
             msprime.MassMigration(
@@ -1650,3 +1651,254 @@ class Pre_out_of_africa_admixture(Sriram_demography):
                 initial_size=self.N_A,
                 population_id=ids['AF'])
         ]
+
+
+class AFR_split_F4_demography(Base_demography):
+    def set_constants(self):
+        Sriram_demography.set_constants(self)
+
+        self.T_PULSE_preOOA = 250e3 / self.generation_time
+
+        # effective population size used for scaling
+        self.N_A = 10000
+        # Altai/Vindija lineage effective population size
+        self.N_N1 = 10000
+        # Eastern Neandertal effective population size
+        self.N_N2 = 10000
+        # Neandertal population bottleneck size
+        self.N_N_BN = 100
+        # Population size after EUR + ASN join
+        self.N_B = 10000
+        # Population size of EUR_ASN bottleneck
+        # (following initial admixture event)
+        self.N_B_BN = 100
+        self.N_AF = 10000
+        self.N_AF2 = 10000
+        self.N_CH = 10000
+        self.N_DE = 10000
+        self.N_EU = 10000
+        self.N_AS = 10000
+
+        # Neandertal bottleneck            ### DIFFERENT FROM TENNESSEN
+        self.T_N_BN = 150e3 / self.generation_time
+        # out of Africa                    ### DIFFERENT FROM TENNESSEN
+        self.T_B = 75e3 / self.generation_time
+        # Neandertal introgression pulse 1 ### DIFFERENT FROM TENNESSEN
+        self.T_PULSE1 = 50e3 / self.generation_time
+        # A 3rd Bottleneck following shortly after initial admixture event
+        # SET AT 1800 GEN
+        self.T_B_BN = 45e3 / self.generation_time
+        # European / East Asian split
+        self.T_EU_AS = 23e3 / self.generation_time
+
+    def set_populations(self):
+        self.populations = [
+            Population(abbreviation='N1',
+                       population_size=self.N_N1,
+                       samples=self.S_N1,
+                       generations=self.T_N1_SAMPLE,
+                       long_name='Neand1'),
+
+            Population(abbreviation='N2',
+                       population_size=self.N_N2,
+                       samples=self.S_N2,
+                       generations=self.T_N2_SAMPLE,
+                       long_name='Neand2'),
+
+            Population(abbreviation='AF',
+                       population_size=self.N_AF,
+                       growth_rate=0,
+                       samples=self.options.AF_sample_size,
+                       long_name='AFR1'),
+
+            Population(abbreviation='AF2',
+                       population_size=self.N_AF2,
+                       growth_rate=0,
+                       samples=self.options.AF_sample_size,
+                       long_name='AFR2'),
+
+            Population(abbreviation='EU',
+                       population_size=self.N_EU,
+                       growth_rate=0,
+                       samples=self.options.EU_sample_size,
+                       long_name='EUR'),
+
+            Population(abbreviation='AS',
+                       population_size=self.N_AS,
+                       growth_rate=0,
+                       samples=self.options.AS_sample_size,
+                       long_name='ASN'),
+
+            Population(abbreviation='CH',
+                       population_size=self.N_CH,
+                       long_name='Chimp'),
+
+            Population(abbreviation='DE',
+                       population_size=self.N_DE,
+                       generations=50e3 / self.generation_time,
+                       long_name='Deni')
+        ]
+
+    def set_demographic_events(self):
+        ids = self.get_population_map()
+        migrations = self.get_later_migrations()
+
+        self.events = []
+
+        self.events += [
+            # Neand1 to EAS pulse of introgression
+            # msprime.MassMigration(
+            #     time=self.T_PULSE2,
+            #     source=ids['AS'],
+            #     destination=ids['N1'],
+            #     proportion=self.m_PULSE2),
+
+            # AS merges into EU, now termed "B"
+            msprime.MassMigration(
+                time=self.T_EU_AS,
+                source=ids['AS'],
+                destination=ids['EU'],
+                proportion=1.0),
+
+            # Merge Split AF2 into AF
+            msprime.MassMigration(
+                time=self.T_EU_AS,
+                source=ids['AF2'],
+                destination=ids['AF'],
+                proportion=1.0)
+        ]
+
+        ids['B'] = ids['EU']
+
+        self.events += [
+            # set all migration rates to zero
+            msprime.MigrationRateChange(
+                time=self.T_EU_AS,
+                rate=0),
+
+            # migration between "B" and Africa begins
+            msprime.MigrationRateChange(
+                time=self.T_EU_AS,
+                rate=migrations.get('AF_B', 0),
+                matrix_index=(ids['B'], ids['AF'])),
+            msprime.MigrationRateChange(
+                time=self.T_EU_AS,
+                rate=migrations.get('B_AF', 0),
+                matrix_index=(ids['AF'], ids['B'])),
+
+            # set parameters of population "B"
+            msprime.PopulationParametersChange(
+                time=self.T_EU_AS,
+                initial_size=self.N_B,
+                growth_rate=0,
+                population_id=ids['B']),
+
+            # population bottleneck of B begins
+            msprime.PopulationParametersChange(
+                time=self.T_B_BN,
+                initial_size=self.N_B_BN,
+                growth_rate=0,
+                population_id=ids['B']),
+
+            # population bottleneck of B ends shortly before initial admixture
+            msprime.PopulationParametersChange(
+                time=self.T_B_BN + 20,
+                initial_size=self.N_B,
+                growth_rate=0,
+                population_id=ids['B']),
+
+            # Neand1 to EUR_EAS pulse of introgression
+            msprime.MassMigration(
+                time=self.T_PULSE1,
+                source=ids['B'],
+                destination=ids['N1'],
+                proportion=self.m_PULSE1),
+
+            # Population B merges into Africa at T_B
+            msprime.MassMigration(
+                time=self.T_B,
+                source=ids['B'],
+                destination=ids['AF'],
+                proportion=1.0),
+
+            # set all migration rates to zero
+            msprime.MigrationRateChange(
+                time=self.T_B,
+                rate=0),
+
+            # N_2 merges with N_1 at T_N1_N2
+            msprime.MassMigration(
+                time=self.T_N1_N2,
+                source=ids['N2'],
+                destination=ids['N1'],
+                proportion=1.0),
+
+            # set parameters of ancestral Neandertal population
+            msprime.PopulationParametersChange(
+                time=self.T_N1_N2,
+                initial_size=self.N_A,
+                population_id=ids['N1']),
+
+            # Neand1 has short bottleneck
+            msprime.PopulationParametersChange(
+                time=self.T_N_BN,
+                initial_size=self.N_N_BN,
+                growth_rate=0,
+                population_id=ids['N1']),
+
+            # Neand1 bottleneck ends
+            msprime.PopulationParametersChange(
+                time=self.T_N_BN + 20,
+                initial_size=self.N_A,
+                growth_rate=0,
+                population_id=ids['N1']),
+
+            # Human --> Neand admixture
+            msprime.MassMigration(
+                time=self.T_PULSE_preOOA,
+                source=ids['N1'],
+                destination=ids['AF'],
+                proportion=self.m_PULSE2),
+
+            # DE merges with N1
+            msprime.MassMigration(
+                time=self.T_DE_N,
+                source=ids['DE'],
+                destination=ids['N1'],
+                proportion=1.0),
+            msprime.PopulationParametersChange(
+                time=self.T_DE_N,
+                initial_size=self.N_A,
+                population_id=ids['N1']),
+
+            # Neandertals merge into modern human lineage at time T_MH_N
+            msprime.MassMigration(
+                time=self.T_MH_N,
+                source=ids['N1'],
+                destination=ids['AF'],
+                proportion=1.0),
+
+            # set parameters of ancetral hominin population
+            msprime.PopulationParametersChange(
+                time=self.T_MH_N,
+                initial_size=self.N_A,
+                population_id=ids['AF']),
+
+            # Chimp lineage merges into ancestral hominin population
+            # at time T_MH_CH
+            msprime.MassMigration(
+                time=self.T_MH_CH,
+                source=ids['CH'],
+                destination=ids['AF'],
+                proportion=1.0),
+
+            # set parameters of ancestral hominin population
+            msprime.PopulationParametersChange(
+                time=self.T_MH_CH,
+                initial_size=self.N_A,
+                population_id=ids['AF'])
+        ]
+
+    def get_debug_configuration(self):
+        return [pop.get_debug_configuration(includeRate=True)
+                for pop in self.populations]

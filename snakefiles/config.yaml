@@ -1,8 +1,8 @@
 ---
 paths:
     # path to Admixture_Simulate.py
-    #msprime_script: "/Genomics/grid/users/abwolf/SimulatedDemographic/msprime/bin/src/Admixture_Simulation.py"
-    msprime_script: "/Genomics/grid/users/tcomi/msprime_scripts/src/Admixture_Simulation.py"
+    msprime_script: "/Genomics/grid/users/abwolf/SimulatedDemographic/msprime/bin/src/Admixture_Simulation.py"
+    #msprime_script: "/Genomics/grid/users/tcomi/msprime_scripts/src/Admixture_Simulation.py"
     # path to sstar windowed calulation directory (Ben's bin)
     sstar_dir: "/Genomics/grid/users/abwolf/SimulatedDemographic/Sstar/s_star_git"
     vcftools_bin: "/usr/local/bin/vcftools"
@@ -55,7 +55,7 @@ paths:
 
     # Output directory for simulations etc.
     base_output: "/Genomics/akeylab/abwolf/SimulatedDemographic/ABC/{model}"
-    admixed_dir: "__BASE_OUTPUT__/n1_0.0_pi_test"
+    admixed_dir: "__BASE_OUTPUT__/n1_0.05_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.000025_pOOA_0.05"
                 # "__BASE_OUTPUT__/n1_0.03_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0"
     # copy of this file is stored in admixed_dir
     config_copy: "__ADMIXED_DIR__/config_copy.yaml"
@@ -74,10 +74,10 @@ msprime:
     # "OutOfAfr"
     # "Tenn_nomod"
     # "Tenn_pulsed"
-    model: "SplitPop"
-    length: 10000000
-    n1: 0.0
-    n2: 0.0
+    model: "PreOutOfAFR"
+    length: 1000000
+    n1: 0.05
+    n2: 0.1
     split_population_proportion: 0.0
     split_population_size: 1
     EUR: 1006
@@ -86,12 +86,17 @@ msprime:
     batch_size: 100
 
     null_simulations: 2000
-    null_params: "-n 0.0 -d 0.0 \
-                  --split-population-proportion 0.0 \
-                  --split-population-size 1"
+    null_params: "-n 0.0 -d 0.0
+                -g AF_EU_0 -g EU_AF_0
+                -g EU_AS_0 -g AS_EU_0
+                -g AF_AS_0 -g AS_AF_0
+                -G AF_B_0 -G B_AF_0"
 
-    admixed_simulations: 100
-    admixed_params: " "
+    admixed_simulations: 500
+    admixed_params: "-g AF_EU_0 -g EU_AF_0.000025
+                    -g EU_AS_0 -g AS_EU_0
+                    -g AF_AS_0 -g AS_AF_0
+                    -G AF_B_0 -G B_AF_0"
 
 s_star:
     window_size: "50000"

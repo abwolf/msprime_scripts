@@ -158,14 +158,21 @@ def get_params(wildcards, output):
         return config['msprime']['null_params']
     else:
         result = config['msprime']['admixed_params']
-        if output[0].endswith('.vcf.gz'):  # generate stats
+        if output[0].endswith('.vcf.gz') and 'pi' in paths:  # generate stats
             result += ' --pi ' + paths['pi'].format(seed=wildcards.seed)
+        if 'SplitPop' in config['msprime']['model']:
+            result += ( + " --split-population-size {}".format(
+                            config['msprime']['split_population_size'])
+                        + " --split-population-proportion {}".format(
+                           config['msprime']['split_population_proportion'])
+                       )
         result += (" -n {}".format(config['msprime']['n1'])
                  + " -d {}".format(config['msprime']['n2'])
-                 + " --split-population-size {}".format(
-                    config['msprime']['split_population_size'])
-                 + " --split-population-proportion {}".format(
-                    config['msprime']['split_population_proportion']))
+                 # + " --split-population-size {}".format(
+                    # config['msprime']['split_population_size'])
+                 # + " --split-population-proportion {}".format(
+                    # config['msprime']['split_population_proportion'])
+                    )
         return result
 
 rule generate_bed:
@@ -231,7 +238,7 @@ rule generate_vcf:
             '{params}'
 
 def check_vcf(wildcards):
-    
+
     if os.path.exists(format_path(paths['mod_vcf'], wildcards)) or \
         (os.path.exists(format_path(paths['null_db'], wildcards)) and \
          os.path.exists(format_path(paths['pvalue_table'], wildcards))):
@@ -319,6 +326,7 @@ rule sstar_window:
             "-range 0 {config[msprime][length]} "
             "2>/dev/null "
             "| gzip -c - > {output}\n"
+
 
 rule merge_pi:
     input:

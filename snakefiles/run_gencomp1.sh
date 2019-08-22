@@ -17,7 +17,6 @@ snakemake --unlock --rerun-incomplete
 
 ##perform workflow.
 snakemake \
-    --nr \
     --cluster-config cluster.yaml \
     --cluster "sbatch --cpus-per-task={cluster.n} \
         --mem={cluster.memory} --time={cluster.time} --qos={cluster.qos} \
@@ -28,6 +27,6 @@ snakemake \
     -w 60 -j 500 \
     --configfile config.yaml \
     --rerun-incomplete \
-    --until process_vcf
+    --until calc_admix
 
 #snakemake --delete-temp-output
