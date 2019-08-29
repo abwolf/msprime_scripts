@@ -50,7 +50,8 @@ def get_model(options):
         "Tenn_nomod": Demography_Models.Tenn_no_modern_migration(options),
         "Tenn_pulsed": Demography_Models.Tenn_pulsed_migration(options),
         "PreOutOfAFR": Demography_Models.Pre_out_of_africa_admixture(options),
-        "AFRf4": Demography_Models.AFR_split_F4_demography(options)
+        "AFRf4": Demography_Models.AFR_split_F4_demography(options),
+        "Wenqing": Demography_Models.Wenqing_demography(options)
     }
 
     model = models.get(options.model, None)
