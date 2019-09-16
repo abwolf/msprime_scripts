@@ -55,7 +55,7 @@ paths:
 
     # Output directory for simulations etc.
     base_output: "/Genomics/akeylab/abwolf/SimulatedDemographic/ABC/{model}"
-    admixed_dir: "__BASE_OUTPUT__/n1_0.05_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0005_pOOA_0.05"
+    admixed_dir: "__BASE_OUTPUT__/n1_0.15_null_w_migration"
                 # "__BASE_OUTPUT__/n1_0.03_mAfB_0.0_mBAf_0.0_mAfEu_0.0_mEuAf_0.0"
     # copy of this file is stored in admixed_dir
     config_copy: "__ADMIXED_DIR__/config_copy.yaml"
@@ -74,10 +74,10 @@ msprime:
     # "OutOfAfr"
     # "Tenn_nomod"
     # "Tenn_pulsed"
-    model: "PreOutOfAFR"
+    model: "Tenn"
     length: 1000000
-    n1: 0.05
-    n2: 0.05
+    n1: 0.15
+    n2: 0.0
     split_population_proportion: 0.0
     split_population_size: 1
     EUR: 1006
@@ -92,11 +92,13 @@ msprime:
                 -g AF_AS_0 -g AS_AF_0
                 -G AF_B_0 -G B_AF_0"
 
-    admixed_simulations: 500
-    admixed_params: "-g AF_EU_0 -g EU_AF_0.0005
-                    -g EU_AS_0 -g AS_EU_0
-                    -g AF_AS_0 -g AS_AF_0
-                    -G AF_B_0 -G B_AF_0"
+    admixed_simulations: 1000
+    admixed_params: ""
+
+    # "-g AF_EU_0 -g EU_AF_0.0005
+    # -g EU_AS_0 -g AS_EU_0
+    # -g AF_AS_0 -g AS_AF_0
+    # -G AF_B_0 -G B_AF_0"
 
 s_star:
     window_size: "50000"

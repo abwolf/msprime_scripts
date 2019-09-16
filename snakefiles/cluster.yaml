@@ -34,7 +34,7 @@ generate_ecdf:
     "time": '0-12'
 
 join_ecdf:
-    "memory": '15G'
+    "memory": '30G'
     "jobname": 'join-ecdf'
     "time": '14-0'
     "qos": 'long'

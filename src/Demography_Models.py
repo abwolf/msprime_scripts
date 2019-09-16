@@ -1908,6 +1908,8 @@ class Wenqing_demography(Base_demography):
     def set_constants(self):
         Base_demography.set_constants(self)
 
+        self.mutation_rate=1.25e-8
+
         # effective population size used for scaling
         self.N_A = 7310
         # Altai/Vindija lineage effective population size
@@ -1930,9 +1932,15 @@ class Wenqing_demography(Base_demography):
         self.T_MH_N = 700e3 / self.generation_time
         self.T_AF = 316e3 / self.generation_time
         self.T_B = 98e3 / self.generation_time
-        self.T_PULSE1 = 55e3 / sefl.generation_time
+        self.T_PULSE1 = 55e3 / self.generation_time
         self.T_EU_AS = 28e3 / self.generation_time
-        sefl.T_ACL_GRW = 5.115e3 / sefl.generation_time
+        self.T_ACL_GRW = 5.115e3 / self.generation_time
+
+        # Allow time of H--> admixture to be changed with parameter -t
+        ## rate of H->N is set with -d
+        self.T_PULSE_preOOA = ((self.options.t_n1_n2) * 1e3) / self.generation_time
+        #Set T_N1_N2 as a constant
+        self.T_N1_N2 = 145e3 / self.generation_time
 
         self.r0_EU = 0.0027
         self.r0_AS = 0.0031
@@ -1945,12 +1953,60 @@ class Wenqing_demography(Base_demography):
         self.r_AS = math.log(self.N_AS / self.N_AS1) / self.T_ACL_GRW
 
         # self.m_AF_B = 20e-5
-        # self.m_AF_EU = 5e-4
+        # self.m_AF_EU = 1.7e-5
         # self.m_AF_AS = 0.58e-5
         # self.m_EU_AS = 5.9e-5
         # self.m_N_AF = 0
         # self.m_N_EU = 0
         # self.m_N_AS = 0
+
+    def set_populations(self):
+        """set the self.populations variable
+        a list of Populations for the simulation"""
+        self.populations = [
+            # Altai/Vindija lineage effective population size
+            Population(abbreviation='N1',
+                       population_size=self.N_N1,
+                       samples=self.S_N1,
+                       generations=self.T_N1_SAMPLE,
+                       long_name='Neand1'),
+
+            # Eastern Neandertal effective population size
+            Population(abbreviation='N2',
+                       population_size=self.N_N2,
+                       samples=self.S_N2,
+                       generations=self.T_N2_SAMPLE,
+                       long_name='Neand2'),
+
+            Population(abbreviation='AF',
+                       population_size=self.N_AF,
+                       growth_rate=0,
+                       samples=self.options.AF_sample_size,
+                       long_name='AFR'),
+
+            Population(abbreviation='EU',
+                       population_size=self.N_EU,
+                       growth_rate=self.r_EU,
+                       samples=self.options.EU_sample_size,
+                       long_name='EUR'),
+
+            Population(abbreviation='AS',
+                       population_size=self.N_AS,
+                       growth_rate=self.r_AS,
+                       samples=self.options.AS_sample_size,
+                       long_name='ASN'),
+
+            Population(abbreviation='CH',
+                       population_size=self.N_CH,
+                       long_name='Chimp'),
+
+            Population(abbreviation='DE',
+                       population_size=self.N_DE,
+                       generations=50e3 / self.generation_time,
+                       long_name='Deni'),
+
+        ]
+
 
     def set_demographic_events(self):
         """set the list of demographic events in self.events"""
@@ -1978,19 +2034,19 @@ class Wenqing_demography(Base_demography):
             msprime.PopulationParametersChange(
                 time=self.T_ACL_GRW,
                 initial_size=self.N_AS1,
-                growth_rate=self.r0_AS1,
+                growth_rate=self.r0_AS,
                 population_id=ids['AS']),
 
             # set EU popsize at EU0
             msprime.PopulationParametersChange(
-                time=self.T_EU_AS-1,
+                time=self.T_EU_AS,
                 initial_size=self.N_EU0,
                 growth_rate=0,
                 population_id=ids['EU']),
 
             # set AS popsize to AS0
             msprime.PopulationParametersChange(
-                time=self.T_EU_AS-1,
+                time=self.T_EU_AS,
                 initial_size=self.N_AS0,
                 growth_rate=0,
                 population_id=ids['AS']),
@@ -2060,6 +2116,13 @@ class Wenqing_demography(Base_demography):
                 initial_size=self.N_N1,
                 population_id=ids['N1']),
 
+            # Human --> Neand admixture
+            msprime.MassMigration(
+                time=self.T_PULSE_preOOA,
+                source=ids['N1'],
+                destination=ids['AF'],
+                proportion=self.m_PULSE2),
+
             # set parameters of ancestral modern human population
             msprime.PopulationParametersChange(
                 time=self.T_AF,
@@ -2104,7 +2167,6 @@ class Wenqing_demography(Base_demography):
                 initial_size=self.N_A,
                 population_id=ids['AF'])
         ]
-
 
     def get_debug_configuration(self):
         return [pop.get_debug_configuration(includeRate=True)
