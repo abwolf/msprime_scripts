@@ -26,7 +26,8 @@ snakemake \
     -pr \
     -w 60 -j 500 \
     --configfile config.yaml \
-    --rerun-incomplete \
-    --until calc_admix
+    --rerun-incomplete
+
+#    --until calc_admix
 
 #snakemake --delete-temp-output

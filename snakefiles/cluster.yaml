@@ -9,7 +9,7 @@ __default__:
 vcf_to_sstar:
     "n": 10
     "memory": '10G'
-    "time": '0-4'
+    "time": '0-10'
     "jobname": 'vcf-to-sstar'
 
 generate_bed:
@@ -42,12 +42,12 @@ join_ecdf:
 match_pvalue:
     "jobname": 'match-pvalue'
     "n": 10
-    "time": '0-4'
+    "time": '0-23'
     "memory": "10G"
 
 ecdf_bed:
     "n": 10
-    "time": '0-4'
+    "time": '0-10'
     "memory": '25G'
     "jobname": 'ecdf-bed'
 

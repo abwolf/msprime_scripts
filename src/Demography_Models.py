@@ -1101,7 +1101,7 @@ class SplitPop_demography(Base_demography):
         self.T_EU_AS = 28e3 / self.generation_time
         ## Increasing mutation rate dirves up number of variants
             ## but doesn't change Fst values much
-        self.mutation_rate = 2.5e-8
+        self.mutation_rate = 1.2e-8
         ## Decreasing Ne drize up the Fst value...
         # self.N_EU = 100e3
         # self.N_AS = 100e3
